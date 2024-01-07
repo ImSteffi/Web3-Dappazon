@@ -5,7 +5,7 @@ contract Dappazon {
     
     address public owner;
 
-    struct Item {
+    struct Item { // struct names start with a CAPITAL letter  
         // this just defines what a struct (structure) looks like
         uint256 id;
         string name;
@@ -16,9 +16,18 @@ contract Dappazon {
         uint256 stock;
     }
 
+    struct Order {
+        uint256 time;
+        // we can use other structs inside of structs
+        Item item;
+    }
+
     // Key Value (Key => Value) | with mapping we assign the key value and save it to state variable "items";
     mapping(uint256 => Item) public items;
+    mapping(address => uint256) public orderCount;
+    mapping(address => mapping(uint256 => Order)) public orders;
 
+    event Buy(address buyer, uint256 orderId, uint256 itemId);
     event List(string name, uint256 cost, uint256 quantity);
     
     modifier onlyOwner() {
@@ -66,5 +75,36 @@ contract Dappazon {
     }
 
     // buy products
-    // withraw funds
+    function buy(uint256 _id) public payable {
+        // receive Crypto | This part is done in the test (Dappazon.js)
+
+        // Fetch item
+        Item memory item = items[_id];
+
+        // require enough ether to buy an item
+        require(msg.value >= item.cost);
+
+        // require item is in stock
+        require(item.stock > 0);
+
+        // create an order | Order is struct | memory is a location | order is a variable
+        // (block.timestamp) is a global var like (msg.sender), that uses Epoch(sec.) to assign it to a new block that's being made.
+        Order memory order = Order(block.timestamp, item);
+
+        // Add order for user
+        orderCount[msg.sender]++; // <-- Order ID
+        orders[msg.sender][orderCount[msg.sender]] = order;
+
+        // substract stock
+        items[_id].stock = item.stock -1;
+
+        // emit event
+        emit Buy(msg.sender, orderCount[msg.sender], item.id);
+    }
+
+    // withdraw funds
+    function withdraw() public onlyOwner {
+        (bool success, ) = owner.call{value: address(this).balance}("");
+        require(success);
+    }
 }
