@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
+import { Web3Provider } from '@ethersproject/providers';
+
 
 // Components
 import Navigation from './components/Navigation'
@@ -13,10 +15,41 @@ import Dappazon from './abis/Dappazon.json'
 import config from './config.json'
 
 function App() {
-  const [account, setAccount] = useState(null);
+  const [provider, setProvider] = useState(null)
+  const [dappazon, setDappazon] = useState(null)
+  const [account, setAccount] = useState(null)
+  const [electronics, setElectronics] = useState([])
+  const [clothing, setClothing] = useState([])
+  const [toys, setToys] = useState([])
+  
+  const togglePop = () => {
+    console.log('toggle pop')
+  }
 
   const loadBlockchainData = async () => {
-    
+    // connect to the blockchain
+    const provider = new Web3Provider(window.ethereum)
+    const network = await provider.getNetwork()
+
+    // connect to smart contract
+    const networkId = (await provider.getNetwork()).chainId
+    const contractAddress = config[networkId].dappazon.address
+    const dappazon = new ethers.Contract(contractAddress, Dappazon, provider)
+    setDappazon(dappazon)
+
+    // load products
+    const items = []
+
+    for (var i = 0; i < 10; i++) {
+      const item = await dappazon.items(i + 1)
+      items.push(item)
+    }
+    const electronics = items.filter((item) => item.category === 'electronics')
+    const clothing = items.filter((item) => item.category === 'clothing')
+    const toys = items.filter((item) => item.category === 'toys')
+    setElectronics(electronics)
+    setClothing(clothing)
+    setToys(toys)
   }
 
   useEffect(() => {
@@ -28,6 +61,15 @@ function App() {
 
       <Navigation account={account} setAccount={setAccount} />
 
+      <h2>Dappazon best sellers</h2>
+
+      {electronics && clothing && toys && (
+        <>
+          <Section title={"Clothing & Jewelry"} items={clothing} togglePop={togglePop} />
+          <Section title={"Electronics & Gadgets"} items={electronics} togglePop={togglePop} />
+          <Section title={"Toys & Gaming"} items={toys} togglePop={togglePop} />
+        </>
+      )}
     </div>
   );
 }
