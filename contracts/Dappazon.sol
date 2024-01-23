@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.23;
+pragma solidity >=0.4.16 <0.9.0;
 
 contract Dappazon {
     

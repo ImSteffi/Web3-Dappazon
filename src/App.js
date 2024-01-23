@@ -18,23 +18,25 @@ function App() {
   const [provider, setProvider] = useState(null)
   const [dappazon, setDappazon] = useState(null)
   const [account, setAccount] = useState(null)
-  const [electronics, setElectronics] = useState([])
-  const [clothing, setClothing] = useState([])
-  const [toys, setToys] = useState([])
-  
-  const togglePop = () => {
-    console.log('toggle pop')
+  const [electronics, setElectronics] = useState(null)
+  const [clothing, setClothing] = useState(null)
+  const [toys, setToys] = useState(null)
+  const [item, setItem] = useState({})
+  const [toggle, setToggle] = useState(false)
+
+  const togglePop = (item) => {
+    setItem(item)
+    setToggle(!toggle)
   }
 
   const loadBlockchainData = async () => {
     // connect to the blockchain
     const provider = new Web3Provider(window.ethereum)
-    const network = await provider.getNetwork()
+    setProvider(provider)
+    const network = (await provider.getNetwork()).chainId
 
     // connect to smart contract
-    const networkId = (await provider.getNetwork()).chainId
-    const contractAddress = config[networkId].dappazon.address
-    const dappazon = new ethers.Contract(contractAddress, Dappazon, provider)
+    const dappazon = new ethers.Contract(config[network].dappazon.address, Dappazon, provider)
     setDappazon(dappazon)
 
     // load products
@@ -69,6 +71,10 @@ function App() {
           <Section title={"Electronics & Gadgets"} items={electronics} togglePop={togglePop} />
           <Section title={"Toys & Gaming"} items={toys} togglePop={togglePop} />
         </>
+      )}
+
+      {toggle && (
+        <Product item={item} provider={provider} account={account} dappazon={dappazon} togglePop={togglePop} />
       )}
     </div>
   );
